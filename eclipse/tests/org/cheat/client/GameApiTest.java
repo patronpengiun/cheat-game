@@ -38,14 +38,15 @@ public class GameApiTest {
   ImmutableList<Map<String, Object>> playersInfo =
       ImmutableList.<Map<String, Object>>of(strToObj, strToObj);
   Map<String, Object> state = ImmutableMap.<String, Object>of("key", 34, "key2", "dsf");
+  Map<String, Object> lastState = ImmutableMap.<String, Object>of("bc", 34, "key2", true);
   Set set = new Set("k", "sd");
   SetRandomInteger setRandomInteger = new SetRandomInteger("xcv", 23, 54);
   List<Operation> operations = Arrays.asList(set, setRandomInteger, set);
 
   List<HasEquality> messages =
       Arrays.<HasEquality>asList(
-          new UpdateUI(42, playersInfo, state),
-          new VerifyMove(42, playersInfo, state, state, operations, 23),
+          new UpdateUI(42, playersInfo, state, lastState, operations, 12),
+          new VerifyMove(42, playersInfo, state, lastState, operations, 23),
           set, setRandomInteger,
           new EndGame(32),
           new SetVisibility("sd"),
