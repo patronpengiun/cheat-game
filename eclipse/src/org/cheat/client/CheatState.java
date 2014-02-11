@@ -55,6 +55,10 @@ public class CheatState {
     return black;
   }
 
+  public ImmutableList<Integer> getWhiteOrBlack(Color color) {
+    return color.isWhite() ? white : black;
+  }
+
   public ImmutableList<Integer> getMiddle() {
     return middle;
   }

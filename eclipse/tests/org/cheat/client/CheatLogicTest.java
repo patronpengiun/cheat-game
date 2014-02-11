@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cheat.client.GameApi.Delete;
+import org.cheat.client.GameApi.EndGame;
 import org.cheat.client.GameApi.Operation;
 import org.cheat.client.GameApi.Set;
 import org.cheat.client.GameApi.SetVisibility;
@@ -47,56 +48,65 @@ public class CheatLogicTest {
   private static final String YES = "yes"; // we claim we have a cheater
   private final int wId = 41;
   private final int bId = 42;
-  private final List<Integer> visibleToW = ImmutableList.of(wId);
-  private final List<Integer> visibleToB = ImmutableList.of(bId);
-  private final Map<String, Object> wInfo = ImmutableMap.<String, Object>of(PLAYER_ID, wId);
-  private final Map<String, Object> bInfo = ImmutableMap.<String, Object>of(PLAYER_ID, bId);
-  private final List<Map<String, Object>> playersInfo = ImmutableList.of(wInfo, bInfo);
-  private final Map<String, Object> emptyState = ImmutableMap.<String, Object>of();
-  private final Map<String, Object> nonEmptyState = ImmutableMap.<String, Object>of("k", "v");
+  private final ImmutableList<Integer> visibleToW = ImmutableList.of(wId);
+  private final ImmutableList<Integer> visibleToB = ImmutableList.of(bId);
+  private final ImmutableMap<String, Object> wInfo =
+      ImmutableMap.<String, Object>of(PLAYER_ID, wId);
+  private final ImmutableMap<String, Object> bInfo =
+      ImmutableMap.<String, Object>of(PLAYER_ID, bId);
+  private final ImmutableList<Map<String, Object>> playersInfo =
+      ImmutableList.<Map<String, Object>>of(wInfo, bInfo);
+  private final ImmutableMap<String, Object> emptyState = ImmutableMap.<String, Object>of();
+  private final ImmutableMap<String, Object> nonEmptyState =
+      ImmutableMap.<String, Object>of("k", "v");
 
-  private final Map<String, Object> turnOfWEmptyMiddle = ImmutableMap.<String, Object>of(
+  private final ImmutableMap<String, Object> turnOfWEmptyMiddle = ImmutableMap.<String, Object>of(
       TURN, W,
       W, getIndicesInRange(0, 10),
       B, getIndicesInRange(11, 51),
       M, ImmutableList.of());
 
-  Map<String, Object> turnOfBEmptyMiddle = ImmutableMap.<String, Object>of(
+  private final ImmutableMap<String, Object> turnOfBEmptyMiddle = ImmutableMap.<String, Object>of(
       TURN, B,
       W, getIndicesInRange(0, 10),
       B, getIndicesInRange(11, 51),
       M, ImmutableList.of());
 
   // The order of operations: turn, isCheater, W, B, M, claim, C0...C51
-  private final List<Operation> claimOfW = ImmutableList.<Operation>of(
+  private final ImmutableList<Operation> claimOfW = ImmutableList.<Operation>of(
       new Set(TURN, B),
       new Set(W, getIndicesInRange(0, 8)),
       new Set(M, getIndicesInRange(9, 10)),
       new Set(CLAIM, ImmutableList.of("2cards", "rankA")));
 
-  private final List<Operation> claimOfB = ImmutableList.<Operation>of(
+  private final ImmutableList<Operation> claimOfB = ImmutableList.<Operation>of(
       new Set(TURN, W),
       new Set(B, getIndicesInRange(11, 48)),
       new Set(M, getIndicesInRange(49, 51)),
       new Set(CLAIM, ImmutableList.of("3cards", "rankJ")));
 
-  private final List<Operation> illegalClaimWithWrongCards = ImmutableList.<Operation>of(
+  private final ImmutableList<Operation> illegalClaimWithWrongCards = ImmutableList.<Operation>of(
       new Set(TURN, B),
       new Set(W, getIndicesInRange(0, 8)),
       new Set(M, getIndicesInRange(9, 10)),
       new Set(CLAIM, ImmutableList.of("3cards", "rankA")));
 
-  private final List<Operation> illegalClaimWithWrongW = ImmutableList.<Operation>of(
+  private final ImmutableList<Operation> illegalClaimWithWrongW = ImmutableList.<Operation>of(
       new Set(TURN, B),
       new Set(W, getIndicesInRange(0, 7)),
       new Set(M, getIndicesInRange(9, 10)),
       new Set(CLAIM, ImmutableList.of("2cards", "rankA")));
 
-  private final List<Operation> illegalClaimWithWrongM = ImmutableList.<Operation>of(
+  private final ImmutableList<Operation> illegalClaimWithWrongM = ImmutableList.<Operation>of(
       new Set(TURN, B),
       new Set(W, getIndicesInRange(0, 8)),
       new Set(M, getIndicesInRange(8, 10)),
       new Set(CLAIM, ImmutableList.of("2cards", "rankA")));
+
+  private final ImmutableList<Operation> annouceCheaterByW = ImmutableList.<Operation>of(
+      new Set(TURN, W),
+      new Set(IS_CHEATER, YES),
+      new SetVisibility("C50"), new SetVisibility("C51"));
 
 
   private VerifyMove move(
@@ -205,14 +215,8 @@ public class CheatLogicTest {
     assertHacker(move(wId, turnOfWEmptyMiddle, illegalClaimWithWrongM));
   }
 
-  // The order of operations: turn, isCheater, W, B, M, claim, C0...C51
-  List<Operation> claimCheaterByW = ImmutableList.<Operation>of(
-      new Set(TURN, W),
-      new Set(IS_CHEATER, YES),
-      new SetVisibility("C50"), new SetVisibility("C51"));
-
   @Test
-  public void testClaimCheaterByWhite() {
+  public void testAnnouceCheaterByWhite() {
     Map<String, Object> state = ImmutableMap.<String, Object>of(
         TURN, W,
         W, getIndicesInRange(0, 10),
@@ -220,12 +224,12 @@ public class CheatLogicTest {
         M, getIndicesInRange(50, 51),
         CLAIM, ImmutableList.of("2cards", "rankA"));
 
-    assertMoveOk(move(wId, state, claimCheaterByW));
+    assertMoveOk(move(wId, state, annouceCheaterByW));
   }
 
   @Test
-  public void testCannotClaimCheaterWhenMiddlePileIsEmpty() {
-    assertHacker(move(wId, turnOfWEmptyMiddle, claimCheaterByW));
+  public void testCannotAnnouceCheaterWhenMiddlePileIsEmpty() {
+    assertHacker(move(wId, turnOfWEmptyMiddle, annouceCheaterByW));
   }
 
   @Test
@@ -326,4 +330,67 @@ public class CheatLogicTest {
     return move(wId, state, claimByW);
   }
 
+  @Test
+  public void testMustAnnouceCheaterWhenOpponentHandIsEmpty() {
+    Map<String, Object> whiteHasNoCardsState = ImmutableMap.<String, Object>of(
+        TURN, B,
+        W, ImmutableList.of(),
+        B, getIndicesInRange(2, 51),
+        M, getIndicesInRange(0, 1),
+        CLAIM, ImmutableList.of("1cards", "rankA"));
+    Map<String, Object> whiteHasCardsState = ImmutableMap.<String, Object>of(
+        TURN, B,
+        W, getIndicesInRange(50, 51),
+        B, getIndicesInRange(2, 49),
+        M, getIndicesInRange(0, 1),
+        CLAIM, ImmutableList.of("1cards", "rankA"));
+
+    List<Operation> annouceCheaterByB = ImmutableList.<Operation>of(
+        new Set(TURN, B),
+        new Set(IS_CHEATER, YES),
+        new SetVisibility("C0"), new SetVisibility("C1"));
+    List<Operation> claimByBWhenWhiteHasNoCards = ImmutableList.<Operation>of(
+        new Set(TURN, W),
+        new Set(B, getIndicesInRange(3, 51)),
+        new Set(M, getIndicesInRange(0, 2)),
+        new Set(CLAIM, ImmutableList.of("1cards", "rankA")));
+    List<Operation> claimByBWhenWhiteHasCards = ImmutableList.<Operation>of(
+        new Set(TURN, W),
+        new Set(B, getIndicesInRange(3, 49)),
+        new Set(M, getIndicesInRange(0, 2)),
+        new Set(CLAIM, ImmutableList.of("1cards", "rankA")));
+
+    // When W has cards, B can both announce cheater or make a normal claim
+    // When W has NO cards, B can only announce cheater
+    assertMoveOk(move(bId, whiteHasCardsState, annouceCheaterByB));
+    assertMoveOk(move(bId, whiteHasCardsState, claimByBWhenWhiteHasCards));
+    assertMoveOk(move(bId, whiteHasNoCardsState, annouceCheaterByB));
+    assertHacker(move(bId, whiteHasNoCardsState, claimByBWhenWhiteHasNoCards));
+  }
+
+  @Test
+  public void testEndGame() {
+    Map<String, Object> state = ImmutableMap.<String, Object>builder()
+        .put(TURN, W)
+        .put(IS_CHEATER, YES)
+        .put("C50", "Ah")
+        .put("C51", "Ah")
+        .put(W, getIndicesInRange(0, 49))
+        .put(B, ImmutableList.of())
+        .put(M, getIndicesInRange(50, 51))
+        .put(CLAIM, ImmutableList.of("2cards", "rankA"))
+        .build();
+    // The order of operations: turn, isCheater, W, B, M, claim, C0...C51
+    List<Operation> operations = ImmutableList.<Operation>of(
+        new Set(TURN, W),
+        new Delete(IS_CHEATER),
+        new Set(W, getIndicesInRange(0, 51)),
+        new Set(M, ImmutableList.of()),
+        new SetVisibility("C50", visibleToW),
+        new SetVisibility("C51", visibleToW),
+        new Shuffle(getCardsInRange(0, 51)),
+        new EndGame(bId));
+
+    assertMoveOk(move(wId, state, operations));
+  }
 }

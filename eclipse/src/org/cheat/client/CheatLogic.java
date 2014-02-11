@@ -10,6 +10,7 @@ import java.util.Map;
 import org.cheat.client.Card.Rank;
 import org.cheat.client.Card.Suit;
 import org.cheat.client.GameApi.Delete;
+import org.cheat.client.GameApi.EndGame;
 import org.cheat.client.GameApi.Operation;
 import org.cheat.client.GameApi.Set;
 import org.cheat.client.GameApi.SetVisibility;
@@ -99,6 +100,7 @@ public class CheatLogic {
     // 3) new Set(M, ImmutableList.of()),
     // 4) new SetVisibility(CX0, visibleToB) ... new SetVisibility(CXn, visibleToB),
     // 5+n) new Shuffle([...])
+    // AND: if W has no cards then the game ends!
     // Let's determine who "lost", just by looking at the lastState.
     Claim lastClaim = state.getClaim().get();
     Color possibleCheaterColor = turnOfColor.getOppositeColor();
@@ -113,8 +115,7 @@ public class CheatLogic {
       }
     }
     Color loserColor = isCheater ? possibleCheaterColor : possibleCheaterColor.getOppositeColor();
-    List<Integer> loserCardIndices =
-        loserColor.isWhite() ? state.getWhite() : state.getBlack();
+    List<Integer> loserCardIndices = state.getWhiteOrBlack(loserColor);
     List<Integer> loserNewCardIndices = concat(loserCardIndices, state.getMiddle());
     List<Operation> operations = Lists.newArrayList();
     operations.add(new Set(TURN, loserColor.name()));
@@ -130,6 +131,10 @@ public class CheatLogic {
       loserNewCards.add(C + newCardIndex);
     }
     operations.add(new Shuffle(loserNewCards));
+    Color winnerColor = loserColor.getOppositeColor();
+    if (state.getWhiteOrBlack(winnerColor).isEmpty()) {
+      operations.add(new EndGame(playerIds.get(winnerColor.ordinal())));
+    }
     return operations;
   }
 
@@ -140,6 +145,9 @@ public class CheatLogic {
     check(cardsToMoveToMiddle.size() >= 1 && cardsToMoveToMiddle.size() <= 4, cardsToMoveToMiddle);
     Claim claim = new Claim(claimRank, cardsToMoveToMiddle.size());
     Color turnOfColor = state.getTurn();
+    // If the opponent has no cards, you must announce a cheater
+    // (then we'll check if the opponent is a cheater, and if not, the game ends)
+    check(!state.getWhiteOrBlack(turnOfColor.getOppositeColor()).isEmpty());
     // If W is doing the claim then the format must be:
     // 0) new Set(turn, B),
     // 1) new Set(W, [...]),
@@ -152,8 +160,7 @@ public class CheatLogic {
       check(lastClaim.get().isClose(claim.getCardRank()),
           lastClaim.get().getCardRank(), claim.getCardRank());
     }
-    List<Integer> lastWorB =
-        turnOfColor.isWhite() ? state.getWhite() :  state.getBlack();
+    List<Integer> lastWorB = state.getWhiteOrBlack(turnOfColor);
     List<Integer> newWorB = subtract(lastWorB, cardsToMoveToMiddle);
     List<Integer> lastM = state.getMiddle();
     List<Integer> newM = concat(lastM, cardsToMoveToMiddle);
