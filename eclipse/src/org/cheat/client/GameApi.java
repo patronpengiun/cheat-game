@@ -390,6 +390,9 @@ public final class GameApi {
   public static class AttemptChangeTokens extends Operation {
     /**
      * Map each playerId to the number of tokens that should be increased/decreased.
+     * The server will verify that the total change in tokens (in playerIdToTokenChange)
+     * is equal to minus the total change in the pot (in playerIdToNumberOfTokensInPot).
+     *
      * For example, suppose the total pot is initially empty, i.e.,
      * playerIdToNumberOfTokensInPot={} (see {@link VerifyMove})
      * Then you do the operation:
