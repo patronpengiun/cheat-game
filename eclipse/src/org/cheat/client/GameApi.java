@@ -19,7 +19,7 @@ public final class GameApi {
   /** playerId for the Artificial Intelligence (AI) player. */
   public static final int AI_PLAYER_ID = 0;
   /** playerId for a user viewing a match; a viewer can't make any moves in the game. */
-  public static final int VIEWER_ID = 0;
+  public static final int VIEWER_ID = -1;
 
   public static class VerifyMove extends HasEquality {
     protected final List<Map<String, Object>> playersInfo;
