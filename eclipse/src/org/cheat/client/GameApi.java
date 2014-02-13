@@ -41,8 +41,8 @@ public final class GameApi {
     /**
      * The number of tokens each player currently has in the pot (see {@link AttemptChangeTokens});
      * The sum of values is always non-negative (i.e., the total pot can NOT be negative).
-     * When the game ends, all the total pot will be divided proportionally to the
-     * player scores (see {@link EndGame}).
+     * If the game ends when the total pot is non-zero,
+     * the pot is given to the player with the highest score (see {@link EndGame}).
      */
     protected final Map<Integer, Integer> playerIdToNumberOfTokensInPot;
 
@@ -412,16 +412,15 @@ public final class GameApi {
      * call:
      * AttemptChangeTokens({42: 4000, 43: 4000}, {42: 0, 43:0})
      * and then the total pot will be 0.
-     * If the game ends when the total pot is non-zero, then it will be divided proportionally to
-     * the end-game scores (see {@link EndGame}).
+     * If the game ends when the total pot is non-zero,
+     * the pot is given to the player with the highest score (see {@link EndGame}).
      */
     private final Map<Integer, Integer> playerIdToTokenChange;
 
     /**
      * The number of tokens each player currently has in the pot;
      * The sum of values is always non-negative (i.e., the total pot can NOT be negative).
-     * When the game ends, all the total pot will be divided proportionally to the
-     * player scores (see {@link EndGame}).
+     * When the game ends, the pot is given to the player with the highest score.
      */
     protected final Map<Integer, Integer> playerIdToNumberOfTokensInPot;
 
