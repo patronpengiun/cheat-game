@@ -330,9 +330,19 @@ public final class GameApi {
 
   public static class SetTurn extends Operation {
     private final int playerId;
+    /** The number of seconds playerId will have to send MakeMove;
+     * if it is 0 then the container will decide on the time limit
+     * (or the container may decide that there is no time limit).
+     */
+    private final int numberOfSecondsForTurn;
 
     public SetTurn(int playerId) {
+      this(playerId, 0);
+    }
+
+    public SetTurn(int playerId, int numberOfSecondsForTurn) {
       this.playerId = playerId;
+      this.numberOfSecondsForTurn = numberOfSecondsForTurn;
     }
 
     @Override
@@ -342,11 +352,16 @@ public final class GameApi {
 
     @Override
     public List<Object> getFieldsNameAndValue() {
-      return Arrays.<Object>asList("playerId", playerId);
+      return Arrays.<Object>asList("playerId", playerId,
+          "numberOfSecondsForTurn", numberOfSecondsForTurn);
     }
 
     public int getPlayerId() {
       return playerId;
+    }
+
+    public int getNumberOfSecondsForTurn() {
+      return numberOfSecondsForTurn;
     }
   }
 
@@ -677,7 +692,8 @@ public final class GameApi {
               message.get("visibleToPlayerIds"));
 
         case "SetTurn":
-          return new SetTurn((Integer) message.get("playerId"));
+          return new SetTurn((Integer) message.get("playerId"),
+              (Integer) message.get("numberOfSecondsForTurn"));
 
         case "Delete":
           return new Delete((String) message.get("key"));

@@ -51,6 +51,7 @@ public class GameApiTest {
           new VerifyMove(playersInfo, state, lastState, operations, 23, ImmutableMap.of(42, 33)),
           set, setRandomInteger,
           new EndGame(32),
+          new EndGame(ImmutableMap.of(42, -1232, 43, -5454)),
           new SetVisibility("sd"),
           new Shuffle(Lists.newArrayList("xzc", "zxc")),
           new GameReady(),
@@ -61,6 +62,7 @@ public class GameApiTest {
           new ManipulateState(state),
           new ManipulationDone(operations),
           new SetTurn(41),
+          new SetTurn(41, 23),
           new AttemptChangeTokens(ImmutableMap.of(42, -1232, 43, -5454),
               ImmutableMap.of(42, 1232, 43, 5454))
           );
