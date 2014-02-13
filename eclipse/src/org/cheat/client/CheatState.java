@@ -7,11 +7,13 @@ import com.google.common.collect.ImmutableList;
 
 /**
  * Representation of the cheat game state.
- * The game state uses these keys: turn, isCheater, W, B, M, claim, C1...C54
- * which are mapped to these fields: turn, isCheater, white, black, middle, claim, cards
+ * The game state uses these keys: isCheater, W, B, M, claim, C1...C54
+ * which are mapped to these fields: isCheater, white, black, middle, claim, cards
  */
 public class CheatState {
   private final Color turn;
+  private final ImmutableList<Integer> playerIds;
+
   /**
    * Note that some of the entries will have null, meaning the card is not visible to us.
    */
@@ -26,11 +28,13 @@ public class CheatState {
   private final boolean isCheater;
   private final Optional<Claim> claim;
 
-  public CheatState(Color turn, ImmutableList<Optional<Card>> cards, ImmutableList<Integer> white,
+  public CheatState(Color turn, ImmutableList<Integer> playerIds,
+      ImmutableList<Optional<Card>> cards, ImmutableList<Integer> white,
       ImmutableList<Integer> black, ImmutableList<Integer> middle, boolean isCheater,
       Optional<Claim> claim) {
     super();
     this.turn = checkNotNull(turn);
+    this.playerIds = checkNotNull(playerIds);
     this.cards = checkNotNull(cards);
     this.white = checkNotNull(white);
     this.black = checkNotNull(black);
@@ -41,6 +45,14 @@ public class CheatState {
 
   public Color getTurn() {
     return turn;
+  }
+
+  public ImmutableList<Integer> getPlayerIds() {
+    return playerIds;
+  }
+
+  public int getPlayerId(Color color) {
+    return playerIds.get(color.ordinal());
   }
 
   public ImmutableList<Optional<Card>> getCards() {

@@ -13,6 +13,7 @@ import org.cheat.client.GameApi.Delete;
 import org.cheat.client.GameApi.EndGame;
 import org.cheat.client.GameApi.Operation;
 import org.cheat.client.GameApi.Set;
+import org.cheat.client.GameApi.SetTurn;
 import org.cheat.client.GameApi.SetVisibility;
 import org.cheat.client.GameApi.Shuffle;
 import org.cheat.client.GameApi.VerifyMove;
@@ -25,10 +26,9 @@ import com.google.common.collect.Lists;
 
 public class CheatLogic {
   /* The entries used in the cheat game are:
-   *   turn:W/B, isCheater:yes, W, B, M, claim, C0...C51
+   *   isCheater:yes, W, B, M, claim, C0...C51
    * When we send operations on these keys, it will always be in the above order.
    */
-  private static final String TURN = "turn"; // turn of which player (either W or B)
   private static final String W = "W"; // White hand
   private static final String B = "B"; // Black hand
   private static final String M = "M"; // Middle pile
@@ -51,21 +51,14 @@ public class CheatLogic {
     Map<String, Object> lastState = verifyMove.getLastState();
     // Checking the operations are as expected.
     List<Operation> expectedOperations = getExpectedOperations(
-        lastState, lastMove, verifyMove.getPlayerIds());
+        lastState, lastMove, verifyMove.getPlayerIds(), verifyMove.getLastMovePlayerId());
     check(expectedOperations.equals(lastMove), expectedOperations, lastMove);
-
-    // Checking the right player did the move.
-    Color gotMoveFromColor =
-        Color.values()[verifyMove.getPlayerIndex(verifyMove.getLastMovePlayerId())];
-    check(gotMoveFromColor == getExpectedMoveFromColor(lastState), gotMoveFromColor);
-  }
-
-  /** Returns the color that should make the move. */
-  Color getExpectedMoveFromColor(Map<String, Object> lastState) {
+    // We use SetTurn, so we don't need to check that the correct player did the move.
+    // However, we do need to check the first move is done by the white player (and then in the
+    // first MakeMove we'll send SetTurn which will guarantee the correct player send MakeMove).
     if (lastState.isEmpty()) {
-      return Color.W;
+      check(verifyMove.getLastMovePlayerId() == verifyMove.getPlayerIds().get(0));
     }
-    return Color.valueOf((String) lastState.get(TURN));
   }
 
   /** Returns the operations for declaring the opponent is a cheater. */
@@ -74,11 +67,11 @@ public class CheatLogic {
     check(!state.isCheater());
     Color turnOfColor = state.getTurn();
     // Suppose that W claims B is a cheater:
-    // 0) new Set(TURN, W),
+    // 0) new SetTurn(playerIdOfW),
     // 1) new Set(IS_CHEATER, YES),
     // 2) new SetVisibility("CX0") ... new SetVisibility("CXn")
     List<Operation> operations = Lists.newArrayList();
-    operations.add(new Set(TURN, turnOfColor.name()));
+    operations.add(new SetTurn(state.getPlayerId(turnOfColor)));
     operations.add(new Set(IS_CHEATER, YES));
     for (Integer cardIndex : state.getMiddle()) {
       operations.add(new SetVisibility(C + cardIndex));
@@ -87,14 +80,14 @@ public class CheatLogic {
   }
 
   /** Returns the operations for determining who should take the middle pile. */
-  List<Operation> checkIfCheatedMove(CheatState state, List<Integer> playerIds) {
+  List<Operation> checkIfCheatedMove(CheatState state) {
     // checking if we had a cheater.
     check(state.isCheater());
     List<Integer> lastM = state.getMiddle();
     Color turnOfColor = state.getTurn();
     // Suppose that B "lost" (either B cheated or B made a claim and W didn't cheat)
     // then the operations are to move all the cards to B:
-    // 0) new Set(TURN, B),
+    // 0) new SetTurn(playerIdOfB),
     // 1) new Delete(IS_CHEATER),
     // 2) new Set(B, [...]),
     // 3) new Set(M, ImmutableList.of()),
@@ -118,13 +111,13 @@ public class CheatLogic {
     List<Integer> loserCardIndices = state.getWhiteOrBlack(loserColor);
     List<Integer> loserNewCardIndices = concat(loserCardIndices, state.getMiddle());
     List<Operation> operations = Lists.newArrayList();
-    operations.add(new Set(TURN, loserColor.name()));
+    operations.add(new SetTurn(state.getPlayerId(loserColor)));
     operations.add(new Delete(IS_CHEATER));
     operations.add(new Set(loserColor.name(), loserNewCardIndices));
     operations.add(new Set(M, ImmutableList.of()));
     for (Integer cardIndex : state.getMiddle()) {
       operations.add(new SetVisibility(C + cardIndex,
-          ImmutableList.of(playerIds.get(loserColor.ordinal()))));
+          ImmutableList.of(state.getPlayerId(loserColor))));
     }
     List<String> loserNewCards = Lists.newArrayList();
     for (Integer newCardIndex : loserNewCardIndices) {
@@ -133,13 +126,14 @@ public class CheatLogic {
     operations.add(new Shuffle(loserNewCards));
     Color winnerColor = loserColor.getOppositeColor();
     if (state.getWhiteOrBlack(winnerColor).isEmpty()) {
-      operations.add(new EndGame(playerIds.get(winnerColor.ordinal())));
+      operations.add(new EndGame(state.getPlayerId(winnerColor)));
     }
     return operations;
   }
 
   /** Returns the operations for making a claim (e.g., I put down 3 cards of rank K). */
-  List<Operation> doClaimMove(CheatState state, Rank claimRank, List<Integer> cardsToMoveToMiddle) {
+  List<Operation> doClaimMove(CheatState state, Rank claimRank, List<Integer> cardsToMoveToMiddle,
+      List<Integer> playerIds) {
     // doing a claim.
     check(!state.isCheater());
     check(cardsToMoveToMiddle.size() >= 1 && cardsToMoveToMiddle.size() <= 4, cardsToMoveToMiddle);
@@ -149,7 +143,7 @@ public class CheatLogic {
     // (then we'll check if the opponent is a cheater, and if not, the game ends)
     check(!state.getWhiteOrBlack(turnOfColor.getOppositeColor()).isEmpty());
     // If W is doing the claim then the format must be:
-    // 0) new Set(turn, B),
+    // 0) new SetTurn(playerIdOfB),
     // 1) new Set(W, [...]),
     // 2) new Set(M, [...]),
     // 3) new Set(claim, ...)
@@ -164,12 +158,12 @@ public class CheatLogic {
     List<Integer> newWorB = subtract(lastWorB, cardsToMoveToMiddle);
     List<Integer> lastM = state.getMiddle();
     List<Integer> newM = concat(lastM, cardsToMoveToMiddle);
-    // 0) new Set(turn, B/W),
+    // 0) new SetTurn(playerIdOfB/W),
     // 1) new Set(W/B, [...]),
     // 2) new Set(M, [...]),
     // 3) new Set(claim, ...)
     List<Operation> expectedOperations = ImmutableList.<Operation>of(
-        new Set(TURN, turnOfColor.getOppositeColor().name()),
+        new SetTurn(playerIds.get(turnOfColor.getOppositeColor().ordinal())),
         new Set(turnOfColor.name(), newWorB),
         new Set(M, newM),
         new Set(CLAIM, Claim.toClaimEntryInGameState(claim)));
@@ -178,11 +172,13 @@ public class CheatLogic {
 
   @SuppressWarnings("unchecked")
   List<Operation> getExpectedOperations(
-      Map<String, Object> lastApiState, List<Operation> lastMove, List<Integer> playerIds) {
+      Map<String, Object> lastApiState, List<Operation> lastMove, List<Integer> playerIds,
+      int lastMovePlayerId) {
     if (lastApiState.isEmpty()) {
       return getInitialMove(playerIds.get(0), playerIds.get(1));
     }
-    CheatState lastState = gameApiStateToCheatState(lastApiState);
+    CheatState lastState = gameApiStateToCheatState(lastApiState,
+        Color.values()[playerIds.indexOf(lastMovePlayerId)], playerIds);
     // There are 3 types of moves:
     // 1) doing a claim.
     // 2) claiming a cheater (then we have Set(isCheater, yes)).
@@ -191,17 +187,22 @@ public class CheatLogic {
       return declareCheaterMove(lastState);
 
     } else if (lastMove.contains(new Delete(IS_CHEATER))) {
-      return checkIfCheatedMove(lastState, playerIds);
+      return checkIfCheatedMove(lastState);
 
     } else {
       List<Integer> lastM = lastState.getMiddle();
+      // If W is doing the claim then the format must be:
+      // 0) new SetTurn(playerIdOfB),
+      // 1) new Set(W, [...]),
+      // 2) new Set(M, [...]),
+      // 3) new Set(claim, ...)
       Set setM = (Set) lastMove.get(2);
       List<Integer> newM = (List<Integer>) setM.getValue();
       List<Integer> diffM = subtract(newM, lastM);
       Set setClaim = (Set) lastMove.get(3);
       Claim claim =
           checkNotNull(Claim.fromClaimEntryInGameState((List<String>) setClaim.getValue()));
-      return doClaimMove(lastState, claim.getCardRank(), diffM);
+      return doClaimMove(lastState, claim.getCardRank(), diffM, playerIds);
     }
   }
 
@@ -245,7 +246,7 @@ public class CheatLogic {
   List<Operation> getInitialMove(int whitePlayerId, int blackPlayerId) {
     List<Operation> operations = Lists.newArrayList();
     // The order of operations: turn, isCheater, W, B, M, claim, C0...C51
-    operations.add(new Set(TURN, W));
+    operations.add(new SetTurn(whitePlayerId));
     // set W and B hands
     operations.add(new Set(W, getIndicesInRange(0, 25)));
     operations.add(new Set(B, getIndicesInRange(26, 51)));
@@ -268,7 +269,8 @@ public class CheatLogic {
   }
 
   @SuppressWarnings("unchecked")
-  private CheatState gameApiStateToCheatState(Map<String, Object> gameApiState) {
+  private CheatState gameApiStateToCheatState(Map<String, Object> gameApiState,
+      Color turnOfColor, List<Integer> playerIds) {
     List<Optional<Card>> cards = Lists.newArrayList();
     for (int i = 0; i < 52; i++) {
       String cardString = (String) gameApiState.get(C + i);
@@ -286,7 +288,8 @@ public class CheatLogic {
     List<Integer> black = (List<Integer>) gameApiState.get(B);
     List<Integer> middle = (List<Integer>) gameApiState.get(M);
     return new CheatState(
-        Color.valueOf((String) gameApiState.get(TURN)),
+        turnOfColor,
+        ImmutableList.copyOf(playerIds),
         ImmutableList.copyOf(cards),
         ImmutableList.copyOf(white), ImmutableList.copyOf(black),
         ImmutableList.copyOf(middle),

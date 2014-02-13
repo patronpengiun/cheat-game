@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.cheat.client.GameApi.AttemptChangeTokens;
 import org.cheat.client.GameApi.EndGame;
 import org.cheat.client.GameApi.GameReady;
 import org.cheat.client.GameApi.HasEquality;
@@ -19,6 +20,7 @@ import org.cheat.client.GameApi.Operation;
 import org.cheat.client.GameApi.RequestManipulator;
 import org.cheat.client.GameApi.Set;
 import org.cheat.client.GameApi.SetRandomInteger;
+import org.cheat.client.GameApi.SetTurn;
 import org.cheat.client.GameApi.SetVisibility;
 import org.cheat.client.GameApi.Shuffle;
 import org.cheat.client.GameApi.UpdateUI;
@@ -45,8 +47,8 @@ public class GameApiTest {
 
   List<HasEquality> messages =
       Arrays.<HasEquality>asList(
-          new UpdateUI(42, playersInfo, state, lastState, operations, 12),
-          new VerifyMove(42, playersInfo, state, lastState, operations, 23),
+          new UpdateUI(42, playersInfo, state, lastState, operations, 12, ImmutableMap.of(42, 1)),
+          new VerifyMove(playersInfo, state, lastState, operations, 23, ImmutableMap.of(42, 33)),
           set, setRandomInteger,
           new EndGame(32),
           new SetVisibility("sd"),
@@ -57,7 +59,10 @@ public class GameApiTest {
           new VerifyMoveDone(23, "asd"),
           new RequestManipulator(),
           new ManipulateState(state),
-          new ManipulationDone(operations)
+          new ManipulationDone(operations),
+          new SetTurn(41),
+          new AttemptChangeTokens(ImmutableMap.of(42, -1232, 43, -5454),
+              ImmutableMap.of(42, 1232, 43, 5454))
           );
 
   @Test
