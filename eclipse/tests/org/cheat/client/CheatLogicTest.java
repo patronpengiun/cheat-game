@@ -119,12 +119,12 @@ public class CheatLogicTest {
   }
 
   private List<Operation> getInitialOperations() {
-    return cheatLogic.getInitialMove(wId, bId);
+    return cheatLogic.getMoveInitial(ImmutableList.of(wId, bId));
   }
 
   @Test
   public void testGetInitialOperationsSize() {
-    assertEquals(4 + 52 + 1 + 52, cheatLogic.getInitialMove(wId, bId).size());
+    assertEquals(4 + 52 + 1 + 52, cheatLogic.getMoveInitial(ImmutableList.of(wId, bId)).size());
   }
 
   @Test

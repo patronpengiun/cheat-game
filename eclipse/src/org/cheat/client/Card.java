@@ -92,6 +92,15 @@ public class Card extends Equality {
     }
   }
 
+  public static final Comparator<Card> COMPARATOR = new Comparator<Card>() {
+    @Override
+    public int compare(Card o1, Card o2) {
+      int rank = o1.rankValue.compareTo(o2.rankValue);
+      int suit = o1.suitValue.compareTo(o2.suitValue);
+      return rank == 0 ? suit : rank;
+    }
+  };
+
   private Suit suitValue;
   private Rank rankValue;
 
