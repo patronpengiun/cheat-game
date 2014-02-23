@@ -214,7 +214,7 @@ public class CheatLogic {
     }
   }
 
-  List<Integer> getIndicesInRange(int fromInclusive, int toInclusive) {
+  public List<Integer> getIndicesInRange(int fromInclusive, int toInclusive) {
     List<Integer> keys = Lists.newArrayList();
     for (int i = fromInclusive; i <= toInclusive; i++) {
       keys.add(i);
@@ -222,7 +222,7 @@ public class CheatLogic {
     return keys;
   }
 
-  List<String> getCardsInRange(int fromInclusive, int toInclusive) {
+  public List<String> getCardsInRange(int fromInclusive, int toInclusive) {
     List<String> keys = Lists.newArrayList();
     for (int i = fromInclusive; i <= toInclusive; i++) {
       keys.add(C + i);

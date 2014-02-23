@@ -28,11 +28,11 @@ public class CheatPresenter {
    * WAS_CHEATING: the player cheated.
    * WAS_NOT_CHEATING: the player did not cheat.
    */
-  enum CheaterMessage {
+  public enum CheaterMessage {
     INVISIBLE, IS_OPPONENT_CHEATING, WAS_CHEATING, WAS_NOT_CHEATING;
   }
 
-  interface View {
+  public interface View {
     /**
      * Sets the presenter. The viewer will call certain methods on the presenter, e.g.,
      * when a card is selected ({@link #cardSelected}),
@@ -52,7 +52,8 @@ public class CheatPresenter {
     /** Sets the state for a viewer, i.e., not one of the players. */
     void setViewerState(int numberOfWhiteCards, int numberOfBlackCards,
         int numberOfCardsInMiddlePile,
-        CheaterMessage cheaterMessage);
+        CheaterMessage cheaterMessage,
+        Optional<Claim> lastClaim);
 
     /**
      * Sets the state for a player (whether the player has the turn or not).
@@ -61,7 +62,8 @@ public class CheatPresenter {
     void setPlayerState(int numberOfOpponentCards,
         int numberOfCardsInMiddlePile,
         List<Card> myCards,
-        CheaterMessage cheaterMessage);
+        CheaterMessage cheaterMessage,
+        Optional<Claim> lastClaim);
 
     /**
      * Asks the player to choose the next card or finish his selection.
@@ -121,9 +123,10 @@ public class CheatPresenter {
     }
     cheatState = cheatLogic.gameApiStateToCheatState(updateUI.getState(), turnOfColor, playerIds);
 
+    CheaterMessage cheaterMessage = getCheaterMessage();
     if (updateUI.isViewer()) {
       view.setViewerState(cheatState.getWhite().size(), cheatState.getBlack().size(),
-          cheatState.getMiddle().size(), getCheaterMessage());
+          cheatState.getMiddle().size(), cheaterMessage, cheatState.getClaim());
       return;
     }
     if (updateUI.isAiPlayer()) {
@@ -135,8 +138,15 @@ public class CheatPresenter {
     Color myC = myColor.get();
     Color opponent = myC.getOppositeColor();
     int numberOfOpponentCards = cheatState.getWhiteOrBlack(opponent).size();
+    boolean mustDeclareCheater =
+        isMyTurn() && !cheatState.isCheater() && numberOfOpponentCards == 0
+        && cheatState.getMiddle().size() > 0;
     view.setPlayerState(numberOfOpponentCards, cheatState.getMiddle().size(),
-        getMyCards(), getCheaterMessage());
+        getMyCards(), mustDeclareCheater ? CheaterMessage.INVISIBLE : cheaterMessage,
+        cheatState.getClaim());
+    if (mustDeclareCheater) {
+      declaredCheater();
+    }
     if (isMyTurn()) {
       if (cheatState.isCheater()) {
         checkIfCheated();
@@ -209,7 +219,7 @@ public class CheatPresenter {
    * Adds/remove the card from the {@link #selectedCards}.
    * The view can only call this method if the presenter called {@link View#chooseNextCard}.
    */
-  void cardSelected(Card card) {
+  public void cardSelected(Card card) {
     check(isMyTurn() && !cheatState.isCheater());
     if (selectedCards.contains(card)) {
       selectedCards.remove(card);
@@ -224,7 +234,7 @@ public class CheatPresenter {
    * The view can only call this method if the presenter called {@link View#chooseNextCard}
    * and more than one card was selected by calling {@link #cardSelected}.
    */
-  void finishedSelectingCards() {
+  public void finishedSelectingCards() {
     check(isMyTurn() && !selectedCards.isEmpty());
     view.chooseRankForClaim(getPossibleRanks());
   }
@@ -233,7 +243,7 @@ public class CheatPresenter {
    * Selects a rank and sends a claim.
    * The view can only call this method if the presenter called {@link View#chooseRankForClaim}.
    */
-  void rankSelected(Rank rank) {
+  public void rankSelected(Rank rank) {
     check(isMyTurn() && !selectedCards.isEmpty() && getPossibleRanks().contains(rank));
     List<Integer> myCardIndices = cheatState.getWhiteOrBlack(cheatState.getTurn());
     List<Card> myCards = getMyCards();
@@ -250,7 +260,7 @@ public class CheatPresenter {
    * The view can only call this method if the presenter passed
    * CheaterMessage.IS_OPPONENT_CHEATING in {@link View#setPlayerState}.
    */
-  void declaredCheater() {
+  public void declaredCheater() {
     check(canDeclareCheater());
     container.sendMakeMove(cheatLogic.getMoveDeclareCheater(cheatState));
   }

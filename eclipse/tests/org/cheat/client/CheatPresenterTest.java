@@ -82,20 +82,25 @@ public class CheatPresenterTest {
   private final ImmutableList<Map<String, Object>> playersInfo =
       ImmutableList.<Map<String, Object>>of(wInfo, bInfo);
 
+  private final Optional<Claim> claimFourAces = Optional.of(new Claim(Rank.ACE, 4));
+  private final Optional<Claim> claimFourKings = Optional.of(new Claim(Rank.KING, 4));
+  private final Optional<Claim> claimAbsent = Optional.<Claim>absent();
+
   /* The interesting states that I'll test. */
   private final ImmutableMap<String, Object> emptyState = ImmutableMap.<String, Object>of();
   private final ImmutableMap<String, Object> emptyMiddle =
-      createState(10, 42, false, Optional.<Claim>absent());
+      createState(10, 42, false, claimAbsent);
   private final ImmutableMap<String, Object> nonEmptyMiddle =
-      createState(10, 10, false, Optional.of(new Claim(Rank.ACE, 4)));
+      createState(10, 10, false, claimFourAces);
   private final ImmutableMap<String, Object> mustDeclareCheater =
-      createState(0, 10, false, Optional.of(new Claim(Rank.ACE, 4)));
+      createState(0, 10, false, claimFourAces);
   private final ImmutableMap<String, Object> declaredCheaterAndIndeedCheated =
-      createState(0, 10, true, Optional.of(new Claim(Rank.KING, 4)));
+      createState(0, 10, true, claimFourKings);
   private final ImmutableMap<String, Object> declaredCheaterAndDidNotCheat =
-      createState(0, 10, true, Optional.of(new Claim(Rank.ACE, 4)));
+      createState(0, 10, true, claimFourAces);
   private final ImmutableMap<String, Object> gameOver =
-      createState(0, 52, false, Optional.<Claim>absent());
+      createState(0, 52, false, claimAbsent);
+
 
   @Before
   public void runBefore() {
@@ -131,96 +136,109 @@ public class CheatPresenterTest {
   @Test
   public void testEmptyMiddleStateForWTurnOfW() {
     cheatPresenter.updateUI(createUpdateUI(wId, wId, emptyMiddle));
-    verify(mockView).setPlayerState(42, 0, getCards(0, 10), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(42, 0, getCards(0, 10), CheaterMessage.INVISIBLE, claimAbsent);
     verify(mockView).chooseNextCard(ImmutableList.<Card>of(), getCards(0, 10));
   }
 
   @Test
   public void testEmptyMiddleStateForWTurnOfB() {
     cheatPresenter.updateUI(createUpdateUI(wId, bId, emptyMiddle));
-    verify(mockView).setPlayerState(42, 0, getCards(0, 10), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(42, 0, getCards(0, 10), CheaterMessage.INVISIBLE, claimAbsent);
   }
 
   @Test
   public void testEmptyMiddleStateForBTurnOfB() {
     cheatPresenter.updateUI(createUpdateUI(bId, bId, emptyMiddle));
-    verify(mockView).setPlayerState(10, 0, getCards(10, 52), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(10, 0, getCards(10, 52), CheaterMessage.INVISIBLE, claimAbsent);
     verify(mockView).chooseNextCard(ImmutableList.<Card>of(), getCards(10, 52));
   }
 
   @Test
   public void testEmptyMiddleStateForBTurnOfW() {
     cheatPresenter.updateUI(createUpdateUI(bId, wId, emptyMiddle));
-    verify(mockView).setPlayerState(10, 0, getCards(10, 52), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(10, 0, getCards(10, 52), CheaterMessage.INVISIBLE, claimAbsent);
   }
 
   @Test
   public void testEmptyMiddleStateForViewerTurnOfW() {
     cheatPresenter.updateUI(createUpdateUI(viewerId, wId, emptyMiddle));
-    verify(mockView).setViewerState(10, 42, 0, CheaterMessage.INVISIBLE);
+    verify(mockView).setViewerState(10, 42, 0, CheaterMessage.INVISIBLE, claimAbsent);
   }
 
   @Test
   public void testEmptyMiddleStateForViewerTurnOfB() {
     cheatPresenter.updateUI(createUpdateUI(viewerId, bId, emptyMiddle));
-    verify(mockView).setViewerState(10, 42, 0, CheaterMessage.INVISIBLE);
+    verify(mockView).setViewerState(10, 42, 0, CheaterMessage.INVISIBLE, claimAbsent);
   }
 
   @Test
   public void testNonEmptyMiddleStateForWTurnOfW() {
     cheatPresenter.updateUI(createUpdateUI(wId, wId, nonEmptyMiddle));
-    verify(mockView).setPlayerState(10, 32, getCards(0, 10), CheaterMessage.IS_OPPONENT_CHEATING);
+    verify(mockView).setPlayerState(10, 32, getCards(0, 10), CheaterMessage.IS_OPPONENT_CHEATING,
+        claimFourAces);
     verify(mockView).chooseNextCard(ImmutableList.<Card>of(), getCards(0, 10));
   }
 
   @Test
   public void testNonEmptyMiddleStateForWTurnOfB() {
     cheatPresenter.updateUI(createUpdateUI(wId, bId, nonEmptyMiddle));
-    verify(mockView).setPlayerState(10, 32, getCards(0, 10), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(10, 32, getCards(0, 10), CheaterMessage.INVISIBLE,
+        claimFourAces);
   }
 
   @Test
   public void testNonEmptyMiddleStateForBTurnOfB() {
     cheatPresenter.updateUI(createUpdateUI(bId, bId, nonEmptyMiddle));
-    verify(mockView).setPlayerState(10, 32, getCards(10, 20), CheaterMessage.IS_OPPONENT_CHEATING);
+    verify(mockView).setPlayerState(10, 32, getCards(10, 20), CheaterMessage.IS_OPPONENT_CHEATING,
+        claimFourAces);
     verify(mockView).chooseNextCard(ImmutableList.<Card>of(), getCards(10, 20));
   }
 
   @Test
   public void testNonEmptyMiddleStateForBTurnOfW() {
     cheatPresenter.updateUI(createUpdateUI(bId, wId, nonEmptyMiddle));
-    verify(mockView).setPlayerState(10, 32, getCards(10, 20), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(10, 32, getCards(10, 20), CheaterMessage.INVISIBLE,
+        claimFourAces);
   }
 
   @Test
   public void testNonEmptyMiddleStateForViewerTurnOfW() {
     cheatPresenter.updateUI(createUpdateUI(viewerId, wId, nonEmptyMiddle));
-    verify(mockView).setViewerState(10, 10, 32, CheaterMessage.INVISIBLE);
+    verify(mockView).setViewerState(10, 10, 32, CheaterMessage.INVISIBLE,
+        claimFourAces);
   }
 
   @Test
   public void testMustDeclareCheaterStateForW() {
     cheatPresenter.updateUI(createUpdateUI(wId, bId, mustDeclareCheater));
-    verify(mockView).setPlayerState(10, 42, getCards(0, 0), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(10, 42, getCards(0, 0), CheaterMessage.INVISIBLE,
+        claimFourAces);
   }
 
   @Test
   public void testMustDeclareCheaterStateForB() {
-    cheatPresenter.updateUI(createUpdateUI(bId, bId, mustDeclareCheater));
-    verify(mockView).setPlayerState(0, 42, getCards(0, 10), CheaterMessage.IS_OPPONENT_CHEATING);
+    UpdateUI updateUI = createUpdateUI(bId, bId, mustDeclareCheater);
+    CheatState cheatState =
+        cheatLogic.gameApiStateToCheatState(updateUI.getState(), Color.B, playerIds);
+    cheatPresenter.updateUI(updateUI);
+    verify(mockView).setPlayerState(0, 42, getCards(0, 10), CheaterMessage.INVISIBLE,
+        claimFourAces);
     // Note that B doesn't have chooseNextCard, because he has to declare cheater.
+    verify(mockContainer).sendMakeMove(cheatLogic.getMoveDeclareCheater(cheatState));
   }
 
   @Test
   public void testMustDeclareCheaterStateForViewer() {
     cheatPresenter.updateUI(createUpdateUI(viewerId, bId, mustDeclareCheater));
-    verify(mockView).setViewerState(0, 10, 42, CheaterMessage.INVISIBLE);
+    verify(mockView).setViewerState(0, 10, 42, CheaterMessage.INVISIBLE,
+        claimFourAces);
   }
 
   @Test
   public void testDeclaredCheaterAndIndeedCheatedStateForW() {
     cheatPresenter.updateUI(createUpdateUI(wId, bId, declaredCheaterAndIndeedCheated));
-    verify(mockView).setPlayerState(10, 42, getCards(0, 0), CheaterMessage.WAS_CHEATING);
+    verify(mockView).setPlayerState(10, 42, getCards(0, 0), CheaterMessage.WAS_CHEATING,
+        claimFourKings);
   }
 
   @Test
@@ -229,20 +247,23 @@ public class CheatPresenterTest {
     CheatState cheatState =
         cheatLogic.gameApiStateToCheatState(updateUI.getState(), Color.B, playerIds);
     cheatPresenter.updateUI(updateUI);
-    verify(mockView).setPlayerState(0, 42, getCards(0, 10), CheaterMessage.WAS_CHEATING);
+    verify(mockView).setPlayerState(0, 42, getCards(0, 10), CheaterMessage.WAS_CHEATING,
+        claimFourKings);
     verify(mockContainer).sendMakeMove(cheatLogic.getMoveCheckIfCheated(cheatState));
   }
 
   @Test
   public void testDeclaredCheaterAndIndeedCheatedStateForViewer() {
     cheatPresenter.updateUI(createUpdateUI(viewerId, bId, declaredCheaterAndIndeedCheated));
-    verify(mockView).setViewerState(0, 10, 42, CheaterMessage.WAS_CHEATING);
+    verify(mockView).setViewerState(0, 10, 42, CheaterMessage.WAS_CHEATING,
+        claimFourKings);
   }
 
   @Test
   public void testDeclaredCheaterAndDidNotCheatStateForW() {
     cheatPresenter.updateUI(createUpdateUI(wId, bId, declaredCheaterAndDidNotCheat));
-    verify(mockView).setPlayerState(10, 42, getCards(0, 0), CheaterMessage.WAS_NOT_CHEATING);
+    verify(mockView).setPlayerState(10, 42, getCards(0, 0), CheaterMessage.WAS_NOT_CHEATING,
+        claimFourAces);
   }
 
   @Test
@@ -251,32 +272,34 @@ public class CheatPresenterTest {
     CheatState cheatState =
         cheatLogic.gameApiStateToCheatState(updateUI.getState(), Color.B, playerIds);
     cheatPresenter.updateUI(updateUI);
-    verify(mockView).setPlayerState(0, 42, getCards(0, 10), CheaterMessage.WAS_NOT_CHEATING);
+    verify(mockView).setPlayerState(0, 42, getCards(0, 10), CheaterMessage.WAS_NOT_CHEATING,
+        claimFourAces);
     verify(mockContainer).sendMakeMove(cheatLogic.getMoveCheckIfCheated(cheatState));
   }
 
   @Test
   public void testDeclaredCheaterAndDidNotCheatStateForViewer() {
     cheatPresenter.updateUI(createUpdateUI(viewerId, bId, declaredCheaterAndDidNotCheat));
-    verify(mockView).setViewerState(0, 10, 42, CheaterMessage.WAS_NOT_CHEATING);
+    verify(mockView).setViewerState(0, 10, 42, CheaterMessage.WAS_NOT_CHEATING,
+        claimFourAces);
   }
 
   @Test
   public void testGameOverStateForW() {
     cheatPresenter.updateUI(createUpdateUI(wId, bId, gameOver));
-    verify(mockView).setPlayerState(52, 0, getCards(0, 0), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(52, 0, getCards(0, 0), CheaterMessage.INVISIBLE, claimAbsent);
   }
 
   @Test
   public void testGameOverStateForB() {
     cheatPresenter.updateUI(createUpdateUI(bId, bId, gameOver));
-    verify(mockView).setPlayerState(0, 0, getCards(0, 52), CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(0, 0, getCards(0, 52), CheaterMessage.INVISIBLE, claimAbsent);
   }
 
   @Test
   public void testGameOverStateForViewer() {
     cheatPresenter.updateUI(createUpdateUI(viewerId, bId, gameOver));
-    verify(mockView).setViewerState(0, 52, 0, CheaterMessage.INVISIBLE);
+    verify(mockView).setViewerState(0, 52, 0, CheaterMessage.INVISIBLE, claimAbsent);
   }
 
   /* Tests for preparing a claim. */
@@ -291,7 +314,7 @@ public class CheatPresenterTest {
     cheatPresenter.cardSelected(myCards.get(1));
     cheatPresenter.finishedSelectingCards();
     cheatPresenter.rankSelected(Rank.ACE);
-    verify(mockView).setPlayerState(42, 0, myCards, CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(42, 0, myCards, CheaterMessage.INVISIBLE, claimAbsent);
     verify(mockView).chooseNextCard(ImmutableList.<Card>of(), myCards);
     verify(mockView).chooseNextCard(getCards(0, 1), getCards(1, 10));
     verify(mockView).chooseNextCard(getCards(0, 2), getCards(2, 10));
@@ -312,7 +335,7 @@ public class CheatPresenterTest {
     cheatPresenter.cardSelected(myCards.get(1)); // remove card 1
     cheatPresenter.finishedSelectingCards();
     cheatPresenter.rankSelected(Rank.ACE);
-    verify(mockView).setPlayerState(42, 0, myCards, CheaterMessage.INVISIBLE);
+    verify(mockView).setPlayerState(42, 0, myCards, CheaterMessage.INVISIBLE, claimAbsent);
     verify(mockView).chooseNextCard(ImmutableList.<Card>of(), myCards);
     verify(mockView, times(2)).chooseNextCard(getCards(0, 1), getCards(1, 10));
     verify(mockView).chooseNextCard(getCards(0, 2), getCards(2, 10));
@@ -328,7 +351,8 @@ public class CheatPresenterTest {
         cheatLogic.gameApiStateToCheatState(updateUI.getState(), Color.W, playerIds);
     cheatPresenter.updateUI(updateUI);
     cheatPresenter.declaredCheater();
-    verify(mockView).setPlayerState(10, 32, getCards(0, 10), CheaterMessage.IS_OPPONENT_CHEATING);
+    verify(mockView).setPlayerState(10, 32, getCards(0, 10), CheaterMessage.IS_OPPONENT_CHEATING,
+        claimFourAces);
     verify(mockView).chooseNextCard(ImmutableList.<Card>of(), getCards(0, 10));
     verify(mockContainer).sendMakeMove(
         cheatLogic.getMoveDeclareCheater(cheatState));
