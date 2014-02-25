@@ -228,6 +228,7 @@ public class CheatLogicTest {
         new Delete(IS_CHEATER),
         new Set(B, getIndicesInRange(11, 51)),
         new Set(M, ImmutableList.of()),
+        new Delete(CLAIM),
         new SetVisibility("C50", visibleToB),
         new SetVisibility("C51", visibleToB),
         new Shuffle(getCardsInRange(11, 51)));
@@ -257,6 +258,7 @@ public class CheatLogicTest {
         new Delete(IS_CHEATER),
         new Set(W, wNewIndices),
         new Set(M, ImmutableList.of()),
+        new Delete(CLAIM),
         new SetVisibility("C50", visibleToW),
         new SetVisibility("C51", visibleToW),
         new Shuffle(wNewCards));
@@ -357,6 +359,7 @@ public class CheatLogicTest {
         new Delete(IS_CHEATER),
         new Set(W, getIndicesInRange(0, 51)),
         new Set(M, ImmutableList.of()),
+        new Delete(CLAIM),
         new SetVisibility("C50", visibleToW),
         new SetVisibility("C51", visibleToW),
         new Shuffle(getCardsInRange(0, 51)),

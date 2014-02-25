@@ -1,5 +1,6 @@
 package org.cheat.graphics;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.cheat.client.Card;
@@ -105,7 +106,7 @@ public class CheatGraphics extends Composite implements CheatPresenter.View {
     final String callCheatOption = "Call cheater!";
     if (lastClaim.isPresent()) {
       Claim claim = lastClaim.get();
-      message = "Player dropped " + claim.getNumberOfCards()
+      message = "Dropped " + claim.getNumberOfCards()
           + " cards, and claimed they are of rank " + claim.getCardRank() + ". ";
     }
     switch (cheaterMessage) {
@@ -127,6 +128,9 @@ public class CheatGraphics extends Composite implements CheatPresenter.View {
     }
     if (message.isEmpty()) {
       return;
+    }
+    if (options.isEmpty()) {
+      options.add("OK");
     }
     new PopupChoices(message, options,
         new PopupChoices.OptionChosen() {
@@ -171,6 +175,7 @@ public class CheatGraphics extends Composite implements CheatPresenter.View {
   public void setPlayerState(int numberOfOpponentCards, int numberOfCardsInMiddlePile,
       List<Card> myCards, CheaterMessage cheaterMessage,
       Optional<Claim> lastClaim) {
+    Collections.sort(myCards);
     placeImages(playerArea, createCardImages(myCards, false));
     placeImages(selectedArea, ImmutableList.<Image>of());
     placeImages(opponentArea, createBackCards(numberOfOpponentCards));
@@ -181,10 +186,12 @@ public class CheatGraphics extends Composite implements CheatPresenter.View {
 
   @Override
   public void chooseNextCard(List<Card> selectedCards, List<Card> remainingCards) {
+    Collections.sort(selectedCards);
+    Collections.sort(remainingCards);
     enableClicks = true;
     placeImages(playerArea, createCardImages(remainingCards, true));
     placeImages(selectedArea, createCardImages(selectedCards, true));
-    claimBtn.setEnabled(true);
+    claimBtn.setEnabled(!selectedCards.isEmpty());
   }
 
   @Override

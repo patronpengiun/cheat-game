@@ -206,7 +206,7 @@ public class CheatPresenter {
 
   private void chooseNextCard() {
     view.chooseNextCard(
-        ImmutableList.copyOf(selectedCards), cheatLogic.subtract(getMyCards(), selectedCards));
+        Lists.newArrayList(selectedCards), cheatLogic.subtract(getMyCards(), selectedCards));
   }
 
   private void check(boolean val) {

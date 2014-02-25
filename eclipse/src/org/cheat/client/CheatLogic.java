@@ -117,6 +117,7 @@ public class CheatLogic {
     operations.add(new Delete(IS_CHEATER));
     operations.add(new Set(loserColor.name(), loserNewCardIndices));
     operations.add(new Set(M, ImmutableList.of()));
+    operations.add(new Delete(CLAIM));
     for (Integer cardIndex : state.getMiddle()) {
       operations.add(new SetVisibility(C + cardIndex,
           ImmutableList.of(state.getPlayerId(loserColor))));
