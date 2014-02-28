@@ -37,9 +37,7 @@ public final class GameApi {
   }
 
   /**
-   * A container for games that iterates over all the players for every MakeMove received.
-   * The container will first call UpdateUI for a viewer,
-   * then (after next() is called) for the first player, then the second player, etc.
+   * A container for games that can iterates over all the players and send them Game API messages.
    */
   public static class IteratingPlayerContainer implements Container {
     private final Game game;
@@ -50,7 +48,6 @@ public final class GameApi {
     private GameState lastGameState = null;
     private List<Operation> lastMove = null;
     private int lastMovePlayerId = 0;
-    private Map<Integer, Integer> playerIdToNumberOfTokensInPot = Maps.newHashMap();
 
     public IteratingPlayerContainer(Game game, int numberOfPlayers) {
       this.game = game;
@@ -76,7 +73,7 @@ public final class GameApi {
       game.sendUpdateUI(new UpdateUI(yourPlayerId, playersInfo,
           gameState.getStateForPlayerId(yourPlayerId),
           lastGameState == null ? null : lastGameState.getStateForPlayerId(yourPlayerId),
-          lastMove, lastMovePlayerId, playerIdToNumberOfTokensInPot));
+          lastMove, lastMovePlayerId, gameState.getPlayerIdToNumberOfTokensInPot()));
     }
 
     @Override
@@ -90,7 +87,7 @@ public final class GameApi {
         game.sendVerifyMove(new VerifyMove(playersInfo,
             gameState.getStateForPlayerId(playerId),
             lastGameState.getStateForPlayerId(playerId), lastMove, lastMovePlayerId,
-            playerIdToNumberOfTokensInPot));
+            gameState.getPlayerIdToNumberOfTokensInPot()));
       }
       updateUi(updateUiPlayerId);
     }
@@ -106,12 +103,17 @@ public final class GameApi {
   public static class GameState {
     private final Map<String, Object> state = Maps.newHashMap();
     private final Map<String, Object> visibleTo = Maps.newHashMap();
+    private Map<Integer, Integer> playerIdToNumberOfTokensInPot = Maps.newHashMap();
 
     public GameState copy() {
       GameState result = new GameState();
       result.state.putAll(state);
       result.visibleTo.putAll(visibleTo);
       return result;
+    }
+
+    public Map<Integer, Integer> getPlayerIdToNumberOfTokensInPot() {
+      return playerIdToNumberOfTokensInPot;
     }
 
     @SuppressWarnings("unchecked")
@@ -171,6 +173,9 @@ public final class GameApi {
           state.put(toKey, oldState.get(fromKey));
           visibleTo.put(toKey, oldVisibleTo.get(fromKey));
         }
+      } else if (operation instanceof AttemptChangeTokens) {
+        playerIdToNumberOfTokensInPot =
+            ((AttemptChangeTokens) operation).getPlayerIdToNumberOfTokensInPot();
       }
     }
 
